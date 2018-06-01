@@ -6,7 +6,6 @@ defmodule TapTrivia.File do
 
     * `:question` - the question
     * `:options` - a list of possible answers
-    * `:points` - the point value
   """
   def parse_file(name) do
     "../../data/#{name}"
@@ -14,11 +13,10 @@ defmodule TapTrivia.File do
     |> File.read!()
     |> String.split("\n", trim: true)
     |> Enum.map(&String.split(&1, ";"))
-    |> Enum.map(fn [question, option_one, option_two, option_three, option_four, points] ->
+    |> Enum.map(fn [question | options] ->
       %{
         question: question,
-        options: [option_one, option_two, option_three, option_four],
-        points: String.to_integer(points)
+        options: options
       }
     end)
   end

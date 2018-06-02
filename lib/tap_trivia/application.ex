@@ -6,7 +6,9 @@ defmodule TapTrivia.Application do
   def start(_type, _args) do
     children = [
       {Registry, keys: :unique, name: TapTrivia.CategoryRegistry},
-      TapTrivia.CategorySupervisor
+      {Registry, keys: :unique, name: TapTrivia.GameRegistry},
+      TapTrivia.CategorySupervisor,
+      TapTrivia.GameSupervisor
     ]
 
     opts = [strategy: :one_for_one, name: TapTrivia.Supervisor]

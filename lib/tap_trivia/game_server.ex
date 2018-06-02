@@ -28,6 +28,7 @@ defmodule TapTrivia.GameServer do
 
   # Server (Private) Interface
 
+  @impl true
   def init({_, category_name, amount}) do
     questions = CategoryCache.get_questions(category_name)
     game = Game.new(questions, amount)

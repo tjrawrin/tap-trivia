@@ -39,6 +39,7 @@ defmodule TapTrivia.GameSupervisor do
 
   # Server (Private) Interface
 
+  @impl true
   def init(:ok) do
     DynamicSupervisor.init(strategy: :one_for_one)
   end

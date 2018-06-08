@@ -37,15 +37,28 @@ defmodule TapTrivia.GameServer do
   # Server (Private) Interface
 
   @impl true
-  def init({_, category_name, amount}) do
+  def init({game_id, category_name, amount}) do
     questions = CategoryCache.get_questions(category_name)
-    game = Game.new(questions, amount)
+
+    game =
+      case :ets.lookup(:games_table, game_id) do
+        [] ->
+          game = Game.new(questions, amount)
+          :ets.insert(:games_table, {game_id, game})
+          game
+
+        [{^game_id, game}] ->
+          game
+      end
+
     {:ok, game, @timeout}
   end
 
   @impl true
   def handle_call({:mark, question_index, player, option_index}, _from, game) do
     new_game = Game.mark(game, question_index, player, option_index)
+
+    :ets.insert(:games_table, {my_game_name(), new_game})
 
     {:reply, summarize(new_game), new_game, @timeout}
   end
@@ -60,7 +73,10 @@ defmodule TapTrivia.GameServer do
   end
 
   @impl true
-  def terminate({:shutdown, :timeout}, _game), do: :ok
+  def terminate({:shutdown, :timeout}, _game) do
+    :ets.delete(:games_table, my_game_name())
+    :ok
+  end
 
   @impl true
   def terminate(_reason, _game), do: :ok
@@ -75,5 +91,9 @@ defmodule TapTrivia.GameServer do
   # things we don't want to show the client.
   defp summarize(game) do
     game
+  end
+
+  defp my_game_name() do
+    Registry.keys(TapTrivia.GameRegistry, self()) |> List.first()
   end
 end

@@ -33,6 +33,7 @@ defmodule TapTrivia.GameSupervisor do
   Terminates a `GameServer` process normally. It won't be restarted.
   """
   def stop_game(game_id) do
+    :ets.delete(:games_table, game_id)
     child_pid = GameServer.game_pid(game_id)
     DynamicSupervisor.terminate_child(__MODULE__, child_pid)
   end

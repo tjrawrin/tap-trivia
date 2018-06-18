@@ -15,8 +15,12 @@ defmodule TapTrivia.GameServer do
     GenServer.start_link(__MODULE__, {game_id, category_name, amount}, name: via_tuple(game_id))
   end
 
-  def mark(game_id, question_index, player, option_index) do
-    GenServer.call(via_tuple(game_id), {:mark, question_index, player, option_index})
+  def mark(game_id, player, option_index) do
+    GenServer.call(via_tuple(game_id), {:mark, player, option_index})
+  end
+
+  def current_card(game_id) do
+    GenServer.call(via_tuple(game_id), :current_card)
   end
 
   def summary(game_id) do
@@ -43,7 +47,7 @@ defmodule TapTrivia.GameServer do
     game =
       case :ets.lookup(:games_table, game_id) do
         [] ->
-          game = Game.new(questions, amount)
+          game = Game.create(questions, amount)
           :ets.insert(:games_table, {game_id, game})
           game
 
@@ -55,12 +59,18 @@ defmodule TapTrivia.GameServer do
   end
 
   @impl true
-  def handle_call({:mark, question_index, player, option_index}, _from, game) do
-    new_game = Game.mark(game, question_index, player, option_index)
+  def handle_call({:mark, player, option_index}, _from, game) do
+    new_game = Game.mark(game, player, option_index)
 
     :ets.insert(:games_table, {my_game_name(), new_game})
 
     {:reply, summarize(new_game), new_game, @timeout}
+  end
+
+  def handle_call(:current_card, _from, game) do
+    game_card = Game.current_card(game)
+
+    {:reply, game_card, game, @timeout}
   end
 
   def handle_call(:summary, _from, game) do

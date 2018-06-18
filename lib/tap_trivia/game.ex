@@ -2,13 +2,22 @@ defmodule TapTrivia.Game do
   @enforce_keys [:cards]
   defstruct cards: nil, scores: %{}, winner: nil
 
-  alias TapTrivia.{GameCard, Game}
+  alias TapTrivia.{CategoryCache, GameCard, Game}
 
   @doc """
   Creats a game with a set `amount` of questions taken randomly
   from the given list of `trivia` questions.
   """
-  def new(questions, amount) do
+  def new(category_name, amount) do
+    questions = CategoryCache.get_questions(category_name)
+    Game.create(questions, amount)
+  end
+
+  @doc """
+  Creats a game with a set `amount` of questions taken randomly
+  from the given list of `trivia` questions.
+  """
+  def create(questions, amount) do
     cards =
       questions
       |> Enum.shuffle()
@@ -20,22 +29,34 @@ defmodule TapTrivia.Game do
   end
 
   @doc """
-  Marks the card that has the given `index` for the given `player` when
-  answered correctly, and updates the scores.
+  Marks the current card for the given `player` when answered correctly,
+  and updates the scores.
   """
-  def mark(game, card_index, player, option_index) do
+  def mark(game, player, option_index) do
+    card = Game.current_card(game)
+
     game
-    |> update_card_with_mark(card_index, player, option_index)
+    |> update_card_with_mark(card, player, option_index)
     |> update_scores()
-    |> assign_winner_if_last_card(card_index)
+    |> assign_winner_if_last_card(card)
+  end
+
+  @doc """
+  Returns the first game card that has an `answered_by` field of `nil`. Starts
+  at the beginning of the list of cards.
+  """
+  def current_card(game) do
+    game.cards
+    |> Enum.reject(fn card -> card.answered_by != nil end)
+    |> List.first()
   end
 
   # Private
 
-  defp update_card_with_mark(game, card_index, player, option_index) do
+  defp update_card_with_mark(game, card, player, option_index) do
     new_cards =
       game.cards
-      |> Enum.map(&mark_card_having_index(&1, card_index, player, option_index))
+      |> Enum.map(&mark_card_having_index(&1, card.index, player, option_index))
 
     %{game | cards: new_cards}
   end
@@ -61,8 +82,8 @@ defmodule TapTrivia.Game do
     %{game | scores: new_scores}
   end
 
-  defp assign_winner_if_last_card(game, card_index) do
-    with true <- last_card?(game.cards, card_index),
+  defp assign_winner_if_last_card(game, card) do
+    with true <- last_card?(game.cards, card.index),
          0 <- Enum.count(game.cards, &is_nil(&1.answered_by)) do
       %{game | winner: find_winner(game)}
     else

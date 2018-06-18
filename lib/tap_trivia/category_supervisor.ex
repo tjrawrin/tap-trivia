@@ -5,7 +5,7 @@ defmodule TapTrivia.CategorySupervisor do
 
   use Supervisor
 
-  alias TapTrivia.CategoryCache
+  alias TapTrivia.{Category, CategoryCache}
 
   # Client (Public) Interface
 
@@ -17,10 +17,7 @@ defmodule TapTrivia.CategorySupervisor do
 
   @impl true
   def init(:ok) do
-    children = [
-      start_cache("video-games", "video_games.csv"),
-      start_cache("states", "states.csv")
-    ]
+    children = generate_children()
 
     Supervisor.init(children, strategy: :one_for_one)
   end
@@ -32,5 +29,14 @@ defmodule TapTrivia.CategorySupervisor do
       id: category_name,
       start: {CategoryCache, :start_link, [category_name, file_name]}
     }
+  end
+
+  defp generate_children() do
+    names = Category.raw_name_list()
+
+    names
+    |> Enum.map(fn name ->
+      start_cache(name, name <> ".csv")
+    end)
   end
 end

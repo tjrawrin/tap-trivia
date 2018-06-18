@@ -67,12 +67,14 @@ defmodule TapTrivia.GameServer do
     {:reply, summarize(new_game), new_game, @timeout}
   end
 
+  @impl true
   def handle_call(:current_card, _from, game) do
     game_card = Game.current_card(game)
 
     {:reply, game_card, game, @timeout}
   end
 
+  @impl true
   def handle_call(:summary, _from, game) do
     {:reply, summarize(game), game, @timeout}
   end

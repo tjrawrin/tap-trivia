@@ -4,13 +4,7 @@ defmodule TapTrivia do
   """
 
   @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> TapTrivia.hello
-      :world
-
+  TODO make this more better
   """
   def hello do
     :world
